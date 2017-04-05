@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeInType           #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -12,7 +14,13 @@ module Data.Type.Integer
   , LIntInvert
   , LIntPlus
   , LIntMinus
+  , posNatVal
+  , liftedIntVal
+  , KnownPosNat
+  , KnownInt
   ) where
+
+import           Data.Proxy
 
 -- | Model positive natural numbers.
 data PosNat = PosNatOne | S PosNat deriving (Eq, Show)
@@ -55,3 +63,36 @@ type instance LIntPlus (LInt Minus (S m)) n = LIntPlus (LInt Minus m) (LIntPred 
 -- | Implement subtraction for type level integers.
 type family LIntMinus (k :: LiftedInt) (l :: LiftedInt) :: LiftedInt
 type instance LIntMinus m n = LIntPlus m (LIntInvert n)
+
+newtype SPosNat (n :: PosNat) = SPosNat Integer
+
+class KnownPosNat (n :: PosNat) where
+  posNatSing :: SPosNat n
+
+instance KnownPosNat PosNatOne where
+  posNatSing = SPosNat 1
+
+instance KnownPosNat n => KnownPosNat (S n) where
+  posNatSing = SPosNat (1 + posNatVal (Proxy :: Proxy n))
+
+posNatVal :: forall n. KnownPosNat n => Proxy n -> Integer
+posNatVal _ = case posNatSing :: SPosNat n of
+                SPosNat x -> x
+
+newtype SInt (n :: LiftedInt) = SInt Integer
+
+class KnownInt (n :: LiftedInt) where
+  intSing :: SInt n
+
+instance KnownInt LIntZero where
+  intSing = SInt 0
+
+instance KnownPosNat n => KnownInt (LInt Plus n) where
+  intSing = SInt (posNatVal (Proxy :: Proxy n))
+
+instance KnownPosNat n => KnownInt (LInt Minus n) where
+  intSing = SInt (- (posNatVal (Proxy :: Proxy n)))
+
+liftedIntVal :: forall i. KnownInt i => Proxy i -> Integer
+liftedIntVal _ = case intSing :: SInt i of
+             SInt x -> x
