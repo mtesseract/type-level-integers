@@ -81,7 +81,7 @@ posNatVal _ = case posNatSing :: SPosNat n of
 
 newtype SInt (n :: LiftedInt) = SInt Integer
 
-class KnownInt (n :: LiftedInt) where
+class KnownInt n where
   intSing :: SInt n
 
 instance KnownInt LIntZero where
