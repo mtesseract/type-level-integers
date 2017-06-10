@@ -1,5 +1,5 @@
 name:                type-level-integers
-version:             0.0.1
+version:             0.0.1.1
 synopsis:            Provides integers lifted to the type level
 description:         This packages provides type level integers together with
                      type families for basic arithmetic.
